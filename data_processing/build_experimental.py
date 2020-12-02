@@ -13,7 +13,6 @@ for i, dirname in enumerate(files_list):
     if not i % 10:
         print("Done {}/{} files".format(i, len(files_list)))
 
-    # dirname = "3j1q_5415"
     pdb_name, mrc = dirname.split("_")
 
     dir_path = os.path.join(datadir_name, dirname)

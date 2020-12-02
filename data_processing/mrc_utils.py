@@ -102,19 +102,21 @@ def carve(mrc, pdb_name, out_name='carved.mrc', padding=4, filter_cutoff=-1):
     data_shape_xyz = np.array([mrc.data.shape[reverse_axis_mapping[i]] for i in range(3)])
 
     # Using the origin, find the corresponding cells in the mrc
-    mins_array = ((xyz_min - origin) / voxel_size - (padding,) * 3 - shift_array).astype(np.int, casting='unsafe')
-    maxs_array = ((xyz_max - origin) / voxel_size + (padding,) * 3 - shift_array).astype(np.int, casting='unsafe')
+    mins_array = ((xyz_min - origin) / voxel_size - shift_array).astype(np.int, casting='unsafe')
+    maxs_array = ((xyz_max - origin) / voxel_size - shift_array).astype(np.int, casting='unsafe')
     mins_array = np.max((mins_array, np.zeros_like(mins_array)), axis=0)
     maxs_array = np.min((maxs_array, data_shape_xyz - 1), axis=0)
     x_min, y_min, z_min = mins_array
     x_max, y_max, z_max = maxs_array
     grouped_bounds = [(i, j) for i, j in zip(mins_array, maxs_array)]
-    shifted_origin = origin + (mins_array + shift_array) * voxel_size
+    shifted_origin = origin + (mins_array + shift_array - (padding,) * 3) * voxel_size
 
     # Extract those cells, one must be careful because x is not always the columns index
     data = mrc.data.copy()
     for array_axis, data_axis in axis_mapping.items():
         data = np.take(data, axis=array_axis, indices=range(*grouped_bounds[data_axis]))
+
+    data = np.pad(data, pad_width=padding)
 
     # Optionnaly select only the cells that are at a certain distance to the pdbs
     if filter_cutoff > 0:
@@ -132,9 +134,9 @@ def carve(mrc, pdb_name, out_name='carved.mrc', padding=4, filter_cutoff=-1):
 
     # Update meta-data
     with mrcfile.new(out_name) as mrc:
-        mrc.header.cella.x = (x_max - x_min) * voxel_size[0]
-        mrc.header.cella.y = (y_max - y_min) * voxel_size[1]
-        mrc.header.cella.z = (z_max - z_min) * voxel_size[2]
+        mrc.header.cella.x = (x_max - x_min + 2 * padding) * voxel_size[0]
+        mrc.header.cella.y = (y_max - y_min + 2 * padding) * voxel_size[1]
+        mrc.header.cella.z = (z_max - z_min + 2 * padding) * voxel_size[2]
         mrc.header.origin.x = shifted_origin[0]
         mrc.header.origin.y = shifted_origin[1]
         mrc.header.origin.z = shifted_origin[2]
