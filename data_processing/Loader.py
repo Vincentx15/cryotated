@@ -34,7 +34,7 @@ class EMDataset(Dataset):
         dirname = self.keys[item]
         pdb_name, mrc = dirname.split("_")
 
-        complex =
+        complex = 0
         cp = self.database.get_complex(prot, lig, rotate=self.rotate)
 
         gprot = cp.grid_prot.astype(np.float32)

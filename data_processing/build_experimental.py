@@ -5,7 +5,7 @@ import subprocess
 script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(script_dir, '..'))
 
-from data_processing import preprocess_experimental
+from data_processing import mrc_utils
 
 datadir_name = "../data/phenix"
 files_list = os.listdir(datadir_name)
@@ -13,7 +13,7 @@ for i, dirname in enumerate(files_list):
     if not i % 10:
         print("Done {}/{} files".format(i, len(files_list)))
 
-    dirname = "3j1q_5415"
+    # dirname = "3j1q_5415"
     pdb_name, mrc = dirname.split("_")
 
     dir_path = os.path.join(datadir_name, dirname)
@@ -30,6 +30,6 @@ for i, dirname in enumerate(files_list):
         subprocess.call(cmd2, shell=True)
 
     if not os.path.exists(carved_name):
-        zoned = preprocess_experimental.carve(mrc=mrc_path, pdb_name=pdb_path, out_name=carved_name, filter_cutoff=6)
+        zoned = mrc_utils.carve(mrc=mrc_path, pdb_name=pdb_path, out_name=carved_name, filter_cutoff=6)
     if not os.path.exists(subsampled_name):
-        subsampled = preprocess_experimental.subsample(mrc=carved_name, out_name=subsampled_name)
+        subsampled = mrc_utils.subsample(mrc=carved_name, out_name=subsampled_name)
