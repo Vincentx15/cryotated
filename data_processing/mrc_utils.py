@@ -104,8 +104,8 @@ def carve(mrc, pdb_name, out_name='carved.mrc', padding=4, filter_cutoff=-1):
     data_shape_xyz = np.array([mrc.data.shape[reverse_axis_mapping[i]] for i in range(3)])
 
     # Using the origin, find the corresponding cells in the mrc
-    mins_array = ((xyz_min - origin) / voxel_size - shift_array).astype(np.int, casting='unsafe')
-    maxs_array = ((xyz_max - origin) / voxel_size - shift_array).astype(np.int, casting='unsafe')
+    mins_array = ((xyz_min - origin) / voxel_size - shift_array_xyz).astype(np.int, casting='unsafe')
+    maxs_array = ((xyz_max - origin) / voxel_size - shift_array_xyz).astype(np.int, casting='unsafe')
     mins_array = np.max((mins_array, np.zeros_like(mins_array)), axis=0)
     maxs_array = np.min((maxs_array, data_shape_xyz - 1), axis=0)
     x_min, y_min, z_min = mins_array
