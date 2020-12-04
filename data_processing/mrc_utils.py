@@ -213,8 +213,8 @@ class MRC_grid():
     def __init__(self, MRC_file):
         self.mrc_obj = load_mrc(MRC_file)
 
-        voxel_size = np.array(self.mrc_obj.voxel_size[..., None].view(dtype=np.float32))
-        assert np.allclose(voxel_size, np.ones_like(voxel_size), atol=0.01)
+        self.voxel_size = np.array(self.mrc_obj.voxel_size[..., None].view(dtype=np.float32))
+        assert np.allclose(self.voxel_size, np.ones_like(self.voxel_size), atol=0.01)
         self.origin = np.array(self.mrc_obj.header.origin[..., None].view(dtype=np.float32))
         axis_mapping = (int(self.mrc_obj.header.maps) - 1,
                         int(self.mrc_obj.header.mapr) - 1,

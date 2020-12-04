@@ -13,6 +13,7 @@ for i, dirname in enumerate(files_list):
     if not i % 10:
         print("Done {}/{} files".format(i, len(files_list)))
 
+    dirname = "3jb7_6404"
     pdb_name, mrc = dirname.split("_")
 
     dir_path = os.path.join(datadir_name, dirname)
@@ -32,3 +33,4 @@ for i, dirname in enumerate(files_list):
         zoned = mrc_utils.carve(mrc=mrc_path, pdb_name=pdb_path, out_name=carved_name, filter_cutoff=6)
     if not os.path.exists(subsampled_name):
         subsampled = mrc_utils.subsample(mrc=carved_name, out_name=subsampled_name)
+    break

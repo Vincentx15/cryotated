@@ -1,25 +1,34 @@
 import os
+import sys
+
+import numpy as np
 import torch
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import Subset, DataLoader
 
-import numpy as np
+script_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(script_dir, '..'))
+
+
+from data_processing.Complex import Complex
 
 """
 This script takes an hdf5 and organize it into a Database object that yields Complexes
 Then this Database is fed to Pytorch Dataloaders
 """
 
+
 class EMDataset(Dataset):
     """
-        Uses a HDF5 file as defined above and turn it into a Pytorch data set
-        """
+    Encapsulates the Complex building
+    """
 
     def __init__(self, data_path, simulated=True):
         self.data_path = data_path
 
         # For pytorch loading, we need the file reading in the get_item
         self.keys = os.listdir(data_path)
+        self.simulated = simulated
 
     def __len__(self):
         return len(self.keys)
@@ -32,68 +41,36 @@ class EMDataset(Dataset):
         """
 
         dirname = self.keys[item]
+        print(dirname)
         pdb_name, mrc = dirname.split("_")
+        pdb_name = os.path.join(self.data_path, dirname, f'{pdb_name}.pdb')
+        mrc_file = f'{mrc}_simulated.mrc' if self.simulated else f'{mrc}_subsampled.mrc'
+        mrc_path = os.path.join(self.data_path, dirname, mrc_file)
 
-        complex = 0
-        cp = self.database.get_complex(prot, lig, rotate=self.rotate)
+        complex = Complex(pdb_name=pdb_name, mrc=mrc_path)
+        in_grid = complex.mrc.data
+        out_grid = complex.out_grid
 
-        gprot = cp.grid_prot.astype(np.float32)
-        glig = cp.grid_lig.astype(np.float32)
-
-        # cp.save_mrc_lig()
-        # cp.save_mrc_prot()
-
-        return torch.from_numpy(gprot), torch.from_numpy(glig), cp.is_PL
-
-
-class InferenceDataset(Dataset):
-    """
-        Almost the same with less options and different returns, with the name of the ligand.
-        """
-
-    def __init__(self, data_file):
-        self.data_file = data_file
-
-        # For pytorch loading, we need the file reading in the get_item
-        self.database = Database(data_file)
-        self.keys = self.database.get_protlig_keys()
-        self.database = None
-
-    def __len__(self):
-        return len(self.keys)
-
-    def __getitem__(self, item):
-        """
-        Returns the desired complex.
-        :param item:
-        :return:
-        """
-
-        if self.database is None:
-            self.database = Database(self.data_file)
-
-        prot, lig = self.keys[item]
-        cp = self.database.get_complex(prot, lig, rotate=False)
-        gprot = cp.grid_prot.astype(np.float32)
-
-        return torch.from_numpy(gprot), prot, lig, cp.is_PL
+        return torch.from_numpy(in_grid), torch.from_numpy(out_grid)
 
 
 class Loader:
-    def __init__(self, df,
+    def __init__(self,
+                 data_path,
                  batch_size=1,
                  num_workers=10,
-                 rotate=True):
+                 simulated=True):
         """
 
-        :param df: hdf5 file to load
+        :param data_path: hdf5 file to load
         :param batch_size:
         :param num_workers:
         :param rotate:
         """
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.dataset = HDPLDataset(data_file=df, rotate=rotate)
+        self.simulated = simulated
+        self.dataset = EMDataset(data_path=data_path, simulated=simulated)
 
     def get_data(self):
         n = len(self.dataset)
@@ -119,3 +96,14 @@ class Loader:
                                  num_workers=self.num_workers)
 
         return train_loader, valid_loader, test_loader
+
+
+if __name__ == '__main__':
+    loader = Loader(data_path="../data/phenix", num_workers=0)
+    tl, _, _ = loader.get_data()
+    print(f'{len(tl)} systems in our data')
+    print()
+    for mrc, lig in tl:
+        print("mrc shape : ", mrc.shape)
+        print("lig shape : ", lig.shape)
+

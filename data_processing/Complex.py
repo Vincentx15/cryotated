@@ -8,7 +8,7 @@ import sys
 
 from scipy import ndimage
 import pymol.cmd as cmd
-import numpy
+import numpy as np
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(script_dir, '..'))
@@ -40,30 +40,19 @@ def get_grid(coords, mrc, blur=True):
     Generate a grid without channels from the coordinates
     """
 
-    def get_bins(origin, shape):
-        """
-        Compute the 3D bins from the coordinates
-        """
-        xm, ym, zm = origin
-        xM, yM, zM = origin + shape
-        X = numpy.arange(xm, xM + 1)
-        Y = numpy.arange(ym, yM + 1)
-        Z = numpy.arange(zm, zM + 1)
-        return X, Y, Z
-
     def gaussian_blur(data, sigma=1.):
         """
         Apply a gaussian blur to a grid object
         """
         if data.sum() > 0:
-            data = numpy.float_(1. - (data > 0.))
+            data = np.float_(1. - (data > 0.))
             data = ndimage.distance_transform_edt(data)
-            return numpy.exp(-data ** 2 / (2. * sigma ** 2))
+            return np.exp(-data ** 2 / (2. * sigma ** 2))
         else:
             return data
 
-    X, Y, Z = get_bins(mrc.origin, mrc.data.shape)
-    out = numpy.histogramdd(coords, bins=(X, Y, Z))[0]
+    ranger = list(zip(mrc.origin, mrc.origin + mrc.data.shape * mrc.voxel_size))
+    out, _ = np.histogramdd(coords, range=ranger, bins=mrc.data.shape)
 
     if blur:
         out = gaussian_blur(out)
@@ -83,14 +72,14 @@ def get_grid(coords, mrc, blur=True):
 #     def get_grid_shape(xyz_min, xyz_max, spacing, padding):
 #         xm, ym, zm = xyz_min - (padding,) * 3
 #         xM, yM, zM = xyz_max + (padding,) * 3
-#         X = numpy.arange(xm, xM, spacing)
-#         Y = numpy.arange(ym, yM, spacing)
-#         Z = numpy.arange(zm, zM, spacing)
+#         X = np.arange(xm, xM, spacing)
+#         Y = np.arange(ym, yM, spacing)
+#         Z = np.arange(zm, zM, spacing)
 #         nx, ny, nz = len(X) - 1, len(Y) - 1, len(Z) - 1
 #         return nx, ny, nz
 #
 #     channel_ids = coords[:, -1]
-#     channel_ids_u = numpy.unique(channel_ids)
+#     channel_ids_u = np.unique(channel_ids)
 #     if grid_shape is None:
 #         grid_shape = get_grid_shape(xyz_min, xyz_max, spacing, padding)
 #     if len(channel_ids_u) == 1 and channel_ids_u[0] == -1:
@@ -109,8 +98,8 @@ def get_grid(coords, mrc, blur=True):
 #                                  blur=blur)
 #                 grid.append(grid_)
 #             else:  # emtpy channel
-#                 grid.append(numpy.zeros(grid_shape))
-#         grid = numpy.asarray(grid)
+#                 grid.append(np.zeros(grid_shape))
+#         grid = np.asarray(grid)
 #         return grid
 
 
@@ -132,7 +121,9 @@ class Complex(object):
         self.n4 = get_coords_lig(pdb_name=pdb_name, selection=selection)
 
         self.out_grid = get_grid(coords=self.n4, mrc=self.mrc, blur=True)
-        self.save_mrc_lig()
+        # self.save_mrc_lig()
+        self.mrc.data
+        self.out_grid
         pass
 
     def save_mrc_lig(self):
@@ -146,8 +137,16 @@ class Complex(object):
 
 
 if __name__ == '__main__':
-    pdb_name = "4ci0/4ci0.cif"
-    mrc_name = "4ci0/emd_2513_subsampled.mrc"
-    mrc_name = "4ci0/simulated_cut.mrc"
+    pdb_name = "../data/4ci0/4ci0.cif"
+    # mrc_name = "../data/4ci0/emd_2513_subsampled.mrc"
+    mrc_name = "../data/4ci0/simulated_cut.mrc"
+    # pdb_name = "../data/phenix/5lzp_4128/5lzp.pdb"
+    # mrc_name = "../data/phenix/5lzp_4128/4128_subsampled.mrc"
+    # mrc_name = "../data/phenix/5lzp_4128/4128_simulated.mrc"
+    # mrc_name = "../data/4ci0/simulated_cut.mrc"
 
-    Complex(mrc=mrc_name, pdb_name=pdb_name)
+    # Both were checked on this example and worked fine
+
+    cp = Complex(mrc=mrc_name, pdb_name=pdb_name)
+    print("mrc shape : ", cp.mrc.data.shape)
+    print("lig shape : ", cp.out_grid.shape)

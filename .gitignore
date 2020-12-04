@@ -1,0 +1,14 @@
+data/
+test.out/
+.idea/
+results/
+deepPPI_pymol_script/deepPPI/temp_dir/
+
+trash.py
+*.pyc
+
+__pycache__
+.idea*
+.DS_Store
+
+
