@@ -9,7 +9,6 @@ from torch.utils.data import Subset, DataLoader
 script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(script_dir, '..'))
 
-
 from data_processing.Complex import Complex
 
 """
@@ -41,7 +40,7 @@ class EMDataset(Dataset):
         """
 
         dirname = self.keys[item]
-        print(dirname)
+        # print(dirname)
         pdb_name, mrc = dirname.split("_")
         pdb_name = os.path.join(self.data_path, dirname, f'{pdb_name}.pdb')
         mrc_file = f'{mrc}_simulated.mrc' if self.simulated else f'{mrc}_subsampled.mrc'
@@ -76,6 +75,8 @@ class Loader:
         n = len(self.dataset)
 
         np.random.seed(0)
+        torch.manual_seed(0)
+
         split_train, split_valid = 0.7, 0.85
         train_index, valid_index = int(split_train * n), int(split_valid * n)
         indices = list(range(n))
@@ -104,6 +105,6 @@ if __name__ == '__main__':
     print(f'{len(tl)} systems in our data')
     print()
     for mrc, lig in tl:
+        pass
         print("mrc shape : ", mrc.shape)
         print("lig shape : ", lig.shape)
-

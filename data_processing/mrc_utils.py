@@ -85,20 +85,22 @@ def carve(mrc, pdb_name, out_name='carved.mrc', padding=4, filter_cutoff=-1):
     xyz_max = coords.max(axis=0)
 
     # Load the mrc data
-    mrc = load_mrc(mrc, mode='r+')
-    voxel_size = mrc.voxel_size[..., None].view(dtype=np.float32)
-    voxel_size = np.array(voxel_size)
-    origin = mrc.header.origin[..., None].view(dtype=np.float32)
-    origin = np.array(origin)
-    shift_array = np.array((mrc.header.nxstart,
-                            mrc.header.nystart,
-                            mrc.header.nzstart))
     # the data and the 'x,y,z' annotation might not match.
     # axis_mapping tells us which 'xyz' dimension match which axis of the data : {first_axis : X, Y or Z}
+    mrc = load_mrc(mrc, mode='r+')
     axis_mapping = {0: int(mrc.header.maps) - 1,
                     1: int(mrc.header.mapr) - 1,
                     2: int(mrc.header.mapc) - 1}
     reverse_axis_mapping = {value: key for key, value in axis_mapping.items()}
+    voxel_size = mrc.voxel_size[..., None].view(dtype=np.float32)
+    voxel_size = np.array(voxel_size)
+    origin = mrc.header.origin[..., None].view(dtype=np.float32)
+    origin = np.array(origin)
+    # The shift array convention is as crappy as the s,r,c order.
+    shift_array = np.array((mrc.header.nzstart,
+                            mrc.header.nystart,
+                            mrc.header.nxstart))
+    shift_array_xyz = np.array([shift_array[reverse_axis_mapping[i]] for i in range(3)])
     data_shape_xyz = np.array([mrc.data.shape[reverse_axis_mapping[i]] for i in range(3)])
 
     # Using the origin, find the corresponding cells in the mrc
@@ -109,7 +111,7 @@ def carve(mrc, pdb_name, out_name='carved.mrc', padding=4, filter_cutoff=-1):
     x_min, y_min, z_min = mins_array
     x_max, y_max, z_max = maxs_array
     grouped_bounds = [(i, j) for i, j in zip(mins_array, maxs_array)]
-    shifted_origin = origin + (mins_array + shift_array - (padding,) * 3) * voxel_size
+    shifted_origin = origin + (mins_array + shift_array_xyz - (padding,) * 3) * voxel_size
 
     # Extract those cells, one must be careful because x is not always the columns index
     data = mrc.data.copy()
