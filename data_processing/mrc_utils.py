@@ -168,39 +168,24 @@ def subsample(mrc, out_name='subsample.mrc'):
                                                              method='linear',
                                                              bounds_error=False,
                                                              fill_value=0)
-    new_axes = tuple(np.arange(0, data.shape[i] * voxel_size[axis_mapping[i]]) for i in range(3))
+    cella = [mrc.header.cella.x, mrc.header.cella.y, mrc.header.cella.z]
+    new_axes = tuple(np.arange(0, int(cella[axis_mapping[i]])) for i in range(3))
+    # new_axes = tuple(np.arange(0, data.shape[i] * voxel_size[axis_mapping[i]]) for i in range(3))
     x, y, z = np.meshgrid(*new_axes, indexing='ij')
     flat = x.flatten(), y.flatten(), z.flatten()
     new_grid = np.vstack(flat).T
     new_data_grid = interpolator(new_grid).reshape(x.shape).astype(np.float32)
 
     with mrcfile.new(out_name) as mrc2:
-        mrc2.header.cella.x = mrc.header.cella.x
-        mrc2.header.cella.y = mrc.header.cella.y
-        mrc2.header.cella.z = mrc.header.cella.z
+        mrc2.header.cella.x = int(mrc.header.cella.x)
+        mrc2.header.cella.y = int(mrc.header.cella.y)
+        mrc2.header.cella.z = int(mrc.header.cella.z)
         mrc2.header.origin.x = mrc.header.origin.x
         mrc2.header.origin.y = mrc.header.origin.y
         mrc2.header.origin.z = mrc.header.origin.z
         mrc2.set_data(new_data_grid)
         mrc2.update_header_from_data()
         mrc2.update_header_stats()
-
-
-if __name__ == '__main__':
-    # import time
-
-    pdb_name = "data/4ci0/4ci0.cif"
-    mrc_name = "data/4ci0/emd_2513.mrc"
-    carved_name = "data/4ci0/emd_2513_carved.mrc"
-    subsampled_name = "data/4ci0/emd_2513_subsampled.mrc"
-
-    # pdb_name = "data/5a33/5a33.cif"
-    # mrc_name = "data/5a33/emd_3014.mrc"
-    # carved_name = "data/5a33/emd_3014_carved.mrc"
-    # subsampled_name = "data/5a33/emd_3014_subsampled.mrc"
-
-    carve(mrc=mrc_name, pdb_name=pdb_name, out_name=carved_name, filter_cutoff=6)
-    subsample(mrc=carved_name, out_name=subsampled_name)
 
 
 class MRC_grid():
@@ -271,3 +256,20 @@ def save_density(density, outfilename, origin, spacing=1, padding=0):
         mrc.header['origin']['z'] = origin[2] - padding + .5 * spacing
         mrc.update_header_from_data()
         mrc.update_header_stats()
+
+
+if __name__ == '__main__':
+    # import time
+
+    pdb_name = "../data/4ci0/4ci0.cif"
+    mrc_name = "../data/4ci0/emd_2513.mrc"
+    carved_name = "../data/4ci0/emd_2513_carved.mrc"
+    subsampled_name = "../data/4ci0/emd_2513_subsampled_3.mrc"
+
+    # pdb_name = "data/5a33/5a33.cif"
+    # mrc_name = "data/5a33/emd_3014.mrc"
+    # carved_name = "data/5a33/emd_3014_carved.mrc"
+    # subsampled_name = "data/5a33/emd_3014_subsampled.mrc"
+
+    # carve(mrc=mrc_name, pdb_name=pdb_name, out_name=carved_name, filter_cutoff=6)
+    subsample(mrc=carved_name, out_name=subsampled_name)
