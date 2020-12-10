@@ -147,7 +147,7 @@ def carve(mrc, pdb_name, out_name='carved.mrc', padding=4, filter_cutoff=-1):
         mrc.update_header_stats()
 
 
-def subsample(mrc, out_name='subsample.mrc'):
+def subsample(mrc, padding=0, out_name='subsample.mrc'):
     """
         A script to change the voxel size of a mrc to 1A.
         The main operation is building a linear interpolation model and doing inference over it.
@@ -175,14 +175,15 @@ def subsample(mrc, out_name='subsample.mrc'):
     flat = x.flatten(), y.flatten(), z.flatten()
     new_grid = np.vstack(flat).T
     new_data_grid = interpolator(new_grid).reshape(x.shape).astype(np.float32)
+    new_data_grid = np.pad(new_data_grid, pad_width=padding)
 
     with mrcfile.new(out_name) as mrc2:
-        mrc2.header.cella.x = int(mrc.header.cella.x)
-        mrc2.header.cella.y = int(mrc.header.cella.y)
-        mrc2.header.cella.z = int(mrc.header.cella.z)
-        mrc2.header.origin.x = mrc.header.origin.x
-        mrc2.header.origin.y = mrc.header.origin.y
-        mrc2.header.origin.z = mrc.header.origin.z
+        mrc2.header.cella.x = int(mrc.header.cella.x) + 2 * padding
+        mrc2.header.cella.y = int(mrc.header.cella.y) + 2 * padding
+        mrc2.header.cella.z = int(mrc.header.cella.z) + 2 * padding
+        mrc2.header.origin.x = mrc.header.origin.x - padding
+        mrc2.header.origin.y = mrc.header.origin.y - padding
+        mrc2.header.origin.z = mrc.header.origin.z - padding
         mrc2.set_data(new_data_grid)
         mrc2.update_header_from_data()
         mrc2.update_header_stats()
@@ -264,7 +265,7 @@ if __name__ == '__main__':
     pdb_name = "../data/4ci0/4ci0.cif"
     mrc_name = "../data/4ci0/emd_2513.mrc"
     carved_name = "../data/4ci0/emd_2513_carved.mrc"
-    subsampled_name = "../data/4ci0/emd_2513_subsampled_3.mrc"
+    subsampled_name = "../data/4ci0/emd_2513_subsampled_2.mrc"
 
     # pdb_name = "data/5a33/5a33.cif"
     # mrc_name = "data/5a33/emd_3014.mrc"
@@ -272,4 +273,4 @@ if __name__ == '__main__':
     # subsampled_name = "data/5a33/emd_3014_subsampled.mrc"
 
     # carve(mrc=mrc_name, pdb_name=pdb_name, out_name=carved_name, filter_cutoff=6)
-    subsample(mrc=carved_name, out_name=subsampled_name)
+    subsample(mrc=carved_name, out_name=subsampled_name, padding=0)
